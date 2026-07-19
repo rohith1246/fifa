@@ -196,14 +196,54 @@
                     <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">Authorize Move</button>
                 </form>
             </section>
+
+            <!-- AI PA Announcement Generator -->
+            <section class="card-main" id="announcement-panel">
+                <h3 class="section-title">📢 AI Stadium Announcements</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem;">Generate multilingual public address announcements broadcast stadium-wide to 80,000+ fans.</p>
+                <form id="form-announcement" onsubmit="generateAnnouncement(event)">
+                    <fieldset style="border: none; padding: 0; margin: 0;">
+                        <legend style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">Generate Announcement Form</legend>
+                        <div class="form-group">
+                            <label for="announce-topic">Announcement Topic</label>
+                            <input type="text" id="announce-topic" placeholder="e.g. Gate C is now open, Halftime show starting" required aria-required="true">
+                        </div>
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label for="announce-language">Broadcast Language</label>
+                            <select id="announce-language" aria-label="Announcement language">
+                                <option value="English">English</option>
+                                <option value="Spanish">Español (Spanish)</option>
+                                <option value="French">Français (French)</option>
+                                <option value="Portuguese">Português (Portuguese)</option>
+                                <option value="Arabic">Arabic (عربي)</option>
+                                <option value="German">Deutsch (German)</option>
+                            </select>
+                        </div>
+                    </fieldset>
+                    <button type="submit" id="btn-announce" class="btn-primary" style="margin-top: 1.5rem;">Generate Announcement</button>
+                </form>
+                <div id="announcement-result" style="display: none; margin-top: 1.5rem; padding: 1rem 1.2rem; background: rgba(0,230,118,0.06); border-left: 4px solid var(--accent); border-radius: var(--radius-md);" role="status" aria-live="polite">
+                    <strong style="font-size: 0.75rem; color: var(--accent); text-transform: uppercase; display: block; margin-bottom: 0.5rem;">📣 Stadium PA Text</strong>
+                    <p id="announcement-text" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-main); margin: 0;"></p>
+                </div>
+            </section>
         </div>
     </div>
 
     {% else %}
     <!-- ================= FAN ASSISTANT INTERFACE ================= -->
     <div class="ops-controls-header card-main" style="border-left: 5px solid var(--primary); padding: 1.5rem 2rem; margin-bottom: 1.5rem;">
-        <h3 style="font-size: 1.4rem;">FIFA Fan Assistant Center</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time directions, accessibility routing, and gate queue wait times.</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h3 style="font-size: 1.4rem;">FIFA Fan Assistant Center</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time directions, accessibility routing, and gate queue wait times.</p>
+            </div>
+            <button class="btn-secondary" id="btn-matchday" onclick="loadMatchdayBriefing()" style="padding: 0.6rem 1.2rem; font-size: 0.85rem;">⚽ Matchday Briefing</button>
+        </div>
+        <div id="matchday-result" style="display: none; margin-top: 1.2rem; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: var(--radius-md); border: 1px dashed var(--border-color);" role="status" aria-live="polite">
+            <strong style="font-size: 0.75rem; color: var(--accent); text-transform: uppercase;">🏟 FIFA 2026 Matchday Briefing</strong>
+            <p id="matchday-text" style="font-size: 0.87rem; line-height: 1.6; color: var(--text-main); margin-top: 0.5rem;"></p>
+        </div>
     </div>
 
     <div class="dashboard-grid">
@@ -610,6 +650,71 @@ async function submitFanChat(event) {
         console.error(e);
         typingBubble.remove();
         alert("Server error during assistant communication.");
+    }
+}
+async function generateAnnouncement(event) {
+    event.preventDefault();
+    const topic = document.getElementById("announce-topic").value.trim();
+    const language = document.getElementById("announce-language").value;
+    const btn = document.getElementById("btn-announce");
+    const resultDiv = document.getElementById("announcement-result");
+    const resultText = document.getElementById("announcement-text");
+
+    btn.disabled = true;
+    btn.textContent = "Generating...";
+
+    try {
+        const response = await fetch("/api/announce", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": "{{ session.csrf_token }}"
+            },
+            body: JSON.stringify({ topic, language })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            resultText.textContent = data.announcement;
+            resultDiv.style.display = "block";
+            document.getElementById("announce-topic").value = "";
+        } else {
+            alert("Announcement failed: " + data.error);
+        }
+    } catch(e) {
+        console.error(e);
+        alert("Server error generating announcement.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Generate Announcement";
+    }
+}
+
+async function loadMatchdayBriefing() {
+    const btn = document.getElementById("btn-matchday");
+    const resultDiv = document.getElementById("matchday-result");
+    const resultText = document.getElementById("matchday-text");
+
+    btn.disabled = true;
+    btn.textContent = "Loading...";
+
+    try {
+        const response = await fetch("/api/matchday", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            resultText.textContent = data.operations_briefing;
+            resultDiv.style.display = "block";
+        } else {
+            alert("Failed to load briefing: " + data.error);
+        }
+    } catch(e) {
+        console.error(e);
+        alert("Server error loading matchday briefing.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "⚽ Matchday Briefing";
     }
 }
 </script>

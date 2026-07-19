@@ -449,7 +449,11 @@ def api_chat() -> Any:
             f"You are the FIFA World Cup 2026 Smart Stadium Assistant at SoFi/MetLife Stadium.\n"
             f"Here is the real-time stadium gate queue status:\n{gate_status}\n\n"
             f'User\'s Question: "{message}"\n\n'
-            f"Answer the user's question with precise, helpful, and polite instructions. If they ask about gates, direct them to the ones with the shortest queue times. Keep answers concise (max 3 sentences)."
+            f"IMPORTANT: Detect the language the user wrote in and ALWAYS respond in that SAME language.\n"
+            f"Answer the user's question with precise, helpful, and polite instructions. "
+            f"If they ask about gates, direct them to the ones with the shortest queue times. "
+            f"If they ask about accessibility, mention Gate D (VIP/North Concourse) has priority lanes. "
+            f"Keep answers concise (max 3 sentences)."
         )
 
         response_text, provider = run_ai_generation(prompt)
@@ -718,6 +722,104 @@ def simulate_spike() -> Any:
         return jsonify({"error": "Failed to simulate crowd spike."}), 500
     finally:
         db.close()
+
+
+@app.route("/api/announce", methods=["POST"])
+def generate_announcement() -> Any:
+    """
+    AI-Powered Stadium Public Address Announcement Generator.
+    Operations staff submit a topic and the AI generates a clear, multilingual
+    stadium-wide broadcast announcement for fans inside the venue.
+    """
+    if "user_id" not in session or session.get("role") != "operations":
+        return jsonify({"error": "Operations access required."}), 401
+
+    if rate_limit_check(f"announce_{session.get('user_id')}"):
+        return jsonify({"error": "Rate limit exceeded. Please wait a moment."}), 429
+
+    data = request.get_json()
+    topic = escape_html(data.get("topic", "").strip())
+    language = escape_html(data.get("language", "English").strip())
+
+    if not topic:
+        return jsonify({"error": "Announcement topic is required."}), 400
+
+    prompt = (
+        f"You are the FIFA World Cup 2026 Stadium Public Address System Operator.\n"
+        f"Generate a professional, clear, and friendly stadium-wide PA announcement in {language}.\n"
+        f"Announcement Topic: '{topic}'\n\n"
+        f"Guidelines:\n"
+        f"- Keep it under 60 words.\n"
+        f"- Use a warm, authoritative, and calm tone suitable for a large crowd.\n"
+        f"- Begin with 'Attention all fans' or equivalent in the target language.\n"
+        f"- If the topic is safety-related, use an urgent but composed tone.\n"
+        f"Output ONLY the final announcement text. No labels or preamble."
+    )
+
+    try:
+        announcement_text, provider = run_ai_generation(prompt)
+        return (
+            jsonify(
+                {
+                    "announcement": announcement_text,
+                    "language": language,
+                    "topic": topic,
+                    "provider": provider,
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error(f"Error generating announcement: {e}")
+        return jsonify({"error": "Failed to generate announcement."}), 500
+
+
+@app.route("/api/matchday", methods=["GET"])
+def matchday_context() -> Any:
+    """
+    Returns FIFA World Cup 2026 tournament matchday context.
+    Provides real-time fixture metadata, venue details, and AI-generated
+    fan preparation tips for the current matchday.
+    """
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    # FIFA World Cup 2026 venue and fixture context
+    venues: List[Dict[str, Any]] = [
+        {"id": 1, "name": "MetLife Stadium", "city": "East Rutherford, NJ", "capacity": 82500, "country": "USA"},
+        {"id": 2, "name": "SoFi Stadium", "city": "Inglewood, CA", "capacity": 70240, "country": "USA"},
+        {"id": 3, "name": "AT&T Stadium", "city": "Arlington, TX", "capacity": 80000, "country": "USA"},
+        {"id": 4, "name": "Estadio Azteca", "city": "Mexico City", "capacity": 87500, "country": "Mexico"},
+        {"id": 5, "name": "BC Place", "city": "Vancouver", "capacity": 54500, "country": "Canada"},
+    ]
+
+    prompt = (
+        f"You are the FIFA World Cup 2026 Operations Intelligence System.\n"
+        f"Generate a concise matchday briefing for stadium operations teams covering:\n"
+        f"1. Crowd management tip for a full stadium (80,000+ fans).\n"
+        f"2. One key transport or gate recommendation for today's fixture.\n"
+        f"3. A fan morale message to display on stadium screens.\n"
+        f"Keep the total response under 80 words. Use a professional operations tone."
+    )
+
+    try:
+        briefing, provider = run_ai_generation(prompt)
+        return (
+            jsonify(
+                {
+                    "venues": venues,
+                    "total_matches": 104,
+                    "host_countries": ["USA", "Canada", "Mexico"],
+                    "tournament_dates": "June 11 – July 19, 2026",
+                    "operations_briefing": briefing,
+                    "provider": provider,
+                }
+            ),
+            200,
+        )
+    except Exception as e:
+        logger.error(f"Error fetching matchday context: {e}")
+        return jsonify({"error": "Failed to load matchday context."}), 500
 
 
 if __name__ == "__main__":
