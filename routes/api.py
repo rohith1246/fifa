@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Any, Dict, List
 from flask import Blueprint, jsonify, request, session
+from sqlalchemy import func
 from database import SessionLocal
 from models import ChatLog, Incident, StaffAllocation, StadiumGate
 from services.ai_service import get_cached_gate_dicts, invalidate_gate_cache, run_ai_generation
@@ -441,3 +442,68 @@ def matchday_context() -> Any:
     except Exception as e:
         logger.error(f"Error fetching matchday context: {e}")
         return jsonify({"error": "Failed to load matchday context."}), 500
+
+
+@api_bp.route("/api/health", methods=["GET"])
+def health_check() -> Any:
+    """
+    System health check endpoint for monitoring and uptime verification.
+    Returns operational status and database connectivity state.
+    """
+    db = SessionLocal()
+    try:
+        gate_count = db.query(StadiumGate).count()
+        return jsonify({
+            "status": "healthy",
+            "service": "FIFA World Cup 2026 Smart Stadium Platform",
+            "database": "connected",
+            "gates_configured": gate_count,
+        }), 200
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return jsonify({"status": "degraded", "error": str(e)}), 503
+    finally:
+        db.close()
+
+
+@api_bp.route("/api/analytics/summary", methods=["GET"])
+def analytics_summary() -> Any:
+    """
+    Stadium Operations Analytics Summary.
+    Provides aggregate KPIs for tournament decision-making: total incidents,
+    average gate wait times, total staff deployed, and fan chat interactions.
+    """
+    if "user_id" not in session or session.get("role") != "operations":
+        return jsonify({"error": "Operations access required."}), 401
+
+    db = SessionLocal()
+    try:
+        total_incidents = db.query(Incident).count()
+        high_severity = db.query(Incident).filter(Incident.severity == "High").count()
+        pending_incidents = db.query(Incident).filter(Incident.status == "Pending").count()
+
+        avg_queue = db.query(func.avg(StadiumGate.queue_time)).scalar() or 0
+        total_staff = db.query(func.sum(StadiumGate.staff_count)).scalar() or 0
+        total_capacity = db.query(func.sum(StadiumGate.capacity)).scalar() or 0
+
+        total_chats = db.query(ChatLog).count()
+        total_reallocations = db.query(StaffAllocation).count()
+
+        return jsonify({
+            "kpis": {
+                "total_incidents": total_incidents,
+                "high_severity_incidents": high_severity,
+                "pending_incidents": pending_incidents,
+                "average_queue_time_mins": round(float(avg_queue), 1),
+                "total_staff_deployed": int(total_staff),
+                "total_gate_capacity": int(total_capacity),
+                "total_fan_interactions": total_chats,
+                "total_staff_reallocations": total_reallocations,
+            }
+        }), 200
+    except Exception as e:
+        logger.error(f"Error fetching analytics: {e}")
+        return jsonify({"error": "Failed to load analytics."}), 500
+    finally:
+        db.close()
+

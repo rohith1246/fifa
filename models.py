@@ -19,7 +19,7 @@ class User(Base):
     username = Column(String(100), unique=True, nullable=False, index=True)
     password_hash = Column(String(200), nullable=True)
     role = Column(String(50), nullable=False, default="fan")  # "fan" or "operations"
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     # Relationships
     chats = relationship("ChatLog", back_populates="user", cascade="all, delete-orphan")
@@ -46,7 +46,7 @@ class StadiumGate(Base):
     capacity = Column(Integer, nullable=False, default=10000)
     queue_time = Column(Integer, nullable=False, default=10)  # Estimated wait time in minutes
     staff_count = Column(Integer, nullable=False, default=5)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     # Relationships
     allocations = relationship(
@@ -82,7 +82,7 @@ class StaffAllocation(Base):
     from_gate = Column(String(100), nullable=False)
     quantity = Column(Integer, nullable=False)
     reason = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     # Relationships
     gate = relationship("StadiumGate", back_populates="allocations")
@@ -117,7 +117,7 @@ class Incident(Base):
         String(50), nullable=False, default="Pending"
     )  # "Pending", "Dispatched", "Resolved"
     dispatch_notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), index=True)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the Incident model fields into a Python dictionary."""
@@ -146,7 +146,7 @@ class ChatLog(Base):
     )
     sender = Column(String(50), nullable=False, default="user")  # "user" or "assistant"
     message = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), index=True)
 
     # Relationships
     user = relationship("User", back_populates="chats")

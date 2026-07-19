@@ -17,6 +17,30 @@
         </div>
     </div>
 
+    <!-- Real-Time KPI Metrics Banner -->
+    <div id="kpi-banner" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem;" role="region" aria-label="Stadium Operations KPIs">
+        <div class="card-main" style="padding: 1.2rem; margin: 0; text-align: center; border-top: 3px solid var(--accent);">
+            <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Avg Wait Time</p>
+            <span id="kpi-avg-wait" style="font-size: 1.8rem; font-weight: 700; color: var(--accent);">—</span>
+            <p style="font-size: 0.7rem; color: var(--text-muted);">mins</p>
+        </div>
+        <div class="card-main" style="padding: 1.2rem; margin: 0; text-align: center; border-top: 3px solid var(--primary);">
+            <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Staff Deployed</p>
+            <span id="kpi-total-staff" style="font-size: 1.8rem; font-weight: 700; color: var(--primary);">—</span>
+            <p style="font-size: 0.7rem; color: var(--text-muted);">coordinators</p>
+        </div>
+        <div class="card-main" style="padding: 1.2rem; margin: 0; text-align: center; border-top: 3px solid #f59e0b;">
+            <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Active Incidents</p>
+            <span id="kpi-incidents" style="font-size: 1.8rem; font-weight: 700; color: #f59e0b;">—</span>
+            <p style="font-size: 0.7rem; color: var(--text-muted);">pending</p>
+        </div>
+        <div class="card-main" style="padding: 1.2rem; margin: 0; text-align: center; border-top: 3px solid #6366f1;">
+            <p style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Fan Interactions</p>
+            <span id="kpi-chats" style="font-size: 1.8rem; font-weight: 700; color: #6366f1;">—</span>
+            <p style="font-size: 0.7rem; color: var(--text-muted);">messages</p>
+        </div>
+    </div>
+
     <!-- AI Optimization Banner (Hidden by default, shown when run) -->
     <section class="alert-card" id="ops-optimization-banner" style="display: none; background-color: rgba(0, 230, 118, 0.08); border: 1px dashed var(--accent); margin-top: 1rem;" role="status" aria-live="polite">
         <div class="alert-icon">🧠</div>
@@ -379,7 +403,31 @@ document.addEventListener("DOMContentLoaded", () => {
         {% endfor %}
     ];
     updateSVGHeatmap();
+    loadKPIMetrics();
 });
+
+async function loadKPIMetrics() {
+    try {
+        const response = await fetch("/api/analytics/summary", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+        });
+        if (response.ok) {
+            const data = await response.json();
+            const kpis = data.kpis;
+            const avgWait = document.getElementById("kpi-avg-wait");
+            const totalStaff = document.getElementById("kpi-total-staff");
+            const incidents = document.getElementById("kpi-incidents");
+            const chats = document.getElementById("kpi-chats");
+            if (avgWait) avgWait.textContent = kpis.average_queue_time_mins;
+            if (totalStaff) totalStaff.textContent = kpis.total_staff_deployed;
+            if (incidents) incidents.textContent = kpis.pending_incidents;
+            if (chats) chats.textContent = kpis.total_fan_interactions;
+        }
+    } catch (e) {
+        console.error("Failed to load KPI metrics:", e);
+    }
+}
 
 async function simulateCrowdSpike() {
     const btn = document.getElementById("btn-simulate-crowd");

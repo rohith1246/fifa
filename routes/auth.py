@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 auth_bp = Blueprint("auth", __name__)
 
 
-@app_route_register := auth_bp.route("/register", methods=["GET", "POST"])
+@auth_bp.route("/register", methods=["GET", "POST"])
 def register() -> Any:
     """
     Registers a new system user profile (Fan or operations command staff).
@@ -67,7 +67,7 @@ def register() -> Any:
     return render_template("register.html")
 
 
-@app_route_login := auth_bp.route("/login", methods=["GET", "POST"])
+@auth_bp.route("/login", methods=["GET", "POST"])
 def login() -> Any:
     """
     Handles secure profile login credentials check.

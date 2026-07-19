@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Initialize Flask App
 app = Flask(__name__)
 app.config.from_object(Config)
+app.url_map.strict_slashes = False
 
 # Initialize SocketIO with threading async mode
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")

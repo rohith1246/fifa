@@ -479,6 +479,40 @@ class SmartStadiumTestCase(unittest.TestCase):
         self.assertTrue(any(r["name"] == "gate_update" for r in received))
         socket_client.disconnect("/stadium")
 
+    # 17. Health Check Endpoint Tests
+    def test_health_check_returns_healthy(self):
+        """Verify the health check endpoint returns healthy status and DB connectivity."""
+        response = self.client.get("/api/health")
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.get_data(as_text=True))
+        self.assertEqual(data["status"], "healthy")
+        self.assertEqual(data["database"], "connected")
+        self.assertIn("gates_configured", data)
+
+    # 18. Analytics Summary Endpoint Tests
+    def test_analytics_summary_success_for_operations(self):
+        """Verify operations users receive aggregate stadium KPIs from analytics endpoint."""
+        response = self.client.get("/api/analytics/summary")
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.get_data(as_text=True))
+        kpis = data["kpis"]
+        self.assertIn("total_incidents", kpis)
+        self.assertIn("average_queue_time_mins", kpis)
+        self.assertIn("total_staff_deployed", kpis)
+        self.assertIn("total_fan_interactions", kpis)
+        self.assertIn("total_staff_reallocations", kpis)
+        self.assertGreaterEqual(kpis["total_staff_deployed"], 0)
+
+    def test_analytics_summary_unauthorized_for_fan(self):
+        """Verify fans cannot access the analytics summary endpoint."""
+        with self.client.session_transaction() as sess:
+            sess["role"] = "fan"
+            sess["username"] = self.fan_user.username
+            sess["user_id"] = self.fan_user.id
+
+        response = self.client.get("/api/analytics/summary")
+        self.assertEqual(response.status_code, 401)
+
 
 if __name__ == "__main__":
     unittest.main()
