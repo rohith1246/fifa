@@ -10,7 +10,7 @@
             <span class="badge badge-active" style="display: inline-block; width: fit-content; margin-bottom: 0.5rem;">FIFA 2026 Smart Stadiums</span>
             <h2 class="hero-title">Intelligent World Cup Operations</h2>
             <p class="hero-subtitle">
-                Optimize crowd flow, allocate gate staff dynamically, and dispatch emergency incident protocols in real time using advanced Generative AI orchestration.
+                Optimize crowd flow, allocate gate staff dynamically, and dispatch emergency incident protocols in real time using advanced Generative AI orchestration across FIFA World Cup 2026 stadiums in the USA, Canada, and Mexico.
             </p>
             <div class="hero-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                 <a href="{{ url_for('auth.register') }}" class="btn-primary" style="text-align: center; text-decoration: none; padding: 0.8rem 2rem; width: auto; flex: 1;">Register Account</a>
@@ -42,17 +42,33 @@
         </p>
     </section>
 
-    <!-- Core Operational Modules -->
+    <!-- ============ OPERATIONS COMMAND CENTER ============ -->
     <section class="features-section">
-        <h3 class="section-title-center">Command Center Modules</h3>
-        <p class="section-desc-center">Explore the system capabilities built to support matchday logistics.</p>
+        <h3 class="section-title-center">🎛️ Operations Command Center</h3>
+        <p class="section-desc-center">A full-stack real-time control panel for stadium operations teams managing 80,000+ fan matchday logistics.</p>
 
         <div class="features-grid">
             <article class="feature-card">
                 <div class="feature-icon-wrapper">🏟️</div>
-                <h4>Interactive Stadium Telemetry</h4>
+                <h4>Live Gate Telemetry</h4>
                 <p>
-                    Monitor real-time gate capacities, staff counts, and queue wait times. Simulate crowd congestion spikes and view dynamic heatmaps.
+                    Monitor real-time queue wait times and staff counts at every stadium gate. Telemetry is pushed over <strong>WebSockets every 10 seconds</strong> for instant situational awareness. Wait statuses are color-coded: <span style="color: var(--accent); font-weight:600;">Optimal</span>, <span style="color: #f59e0b; font-weight:600;">Moderate</span>, <span style="color: #ef4444; font-weight:600;">Delay</span>.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🗺️</div>
+                <h4>Interactive Arena Heatmap</h4>
+                <p>
+                    A dynamic SVG stadium map visualizes congestion zones in real time. Gate quadrants shift between green, amber, and red as wait times fluctuate — giving operators an instant visual overview of bottleneck areas.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🧠</div>
+                <h4>AI Flow Optimization</h4>
+                <p>
+                    One-click GenAI analysis of all gate congestion profiles. The AI evaluates staff distribution and queue times, then generates <strong>actionable staff re-allocation recommendations</strong> to balance crowd flow across the stadium.
                 </p>
             </article>
 
@@ -60,26 +76,224 @@
                 <div class="feature-icon-wrapper">🚨</div>
                 <h4>AI Incident Classification</h4>
                 <p>
-                    Log on-field issues (medical, safety, facility blockages). GenAI automatically estimates severity levels and designs dispatcher instructions.
+                    Log on-field incidents (medical, security, facilities). GenAI automatically classifies severity as <strong>Low / Medium / High</strong> and generates tactical dispatch instructions for field responders. Full incident registry with history.
                 </p>
             </article>
 
             <article class="feature-card">
-                <div class="feature-icon-wrapper">⚙️</div>
-                <h4>AI Resource Optimization</h4>
+                <div class="feature-icon-wrapper">👥</div>
+                <h4>Staff Reallocation Engine</h4>
                 <p>
-                    Perform balancing checks across the stadium. AI calculates optimized staff re-allocations to resolve bottlenecks and reduce delay times.
+                    Manually transfer coordinators between gates with real-time math: source gate staff count decreases, target increases. Queue time estimates are <strong>dynamically recalculated</strong> based on the new staff distribution.
                 </p>
             </article>
 
             <article class="feature-card">
-                <div class="feature-icon-wrapper">💬</div>
-                <h4>Real-Time Fan Assistant</h4>
+                <div class="feature-icon-wrapper">⚡</div>
+                <h4>Crowd Spike Simulator</h4>
                 <p>
-                    A context-aware helper answering fan queries about stadium seating, accessibility coordinates, concessions, and local transit.
+                    Simulate sudden crowd density shifts across all gates. Queue times and staff counts are randomized to create realistic matchday surge scenarios, allowing operators to <strong>test AI optimization under pressure</strong>.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">📢</div>
+                <h4>AI PA Announcement Generator</h4>
+                <p>
+                    Generate professional, multilingual public address announcements for stadium-wide broadcast. Supports <strong>English, Spanish, French, Portuguese, Arabic, and German</strong>. AI produces clear, calm, crowd-appropriate messaging.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">📊</div>
+                <h4>KPI Analytics Dashboard</h4>
+                <p>
+                    Real-time aggregate metrics including average queue wait times, total staff deployed, pending incident count, and total fan chat interactions. Enables <strong>data-driven tournament decision-making</strong> at a glance.
                 </p>
             </article>
         </div>
     </section>
+
+    <!-- ============ FAN ASSISTANT CENTER ============ -->
+    <section class="features-section">
+        <h3 class="section-title-center">🎉 Fan Assistant Center</h3>
+        <p class="section-desc-center">An AI-powered concierge helping 80,000+ fans navigate the stadium experience in real time.</p>
+
+        <div class="features-grid">
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">💬</div>
+                <h4>Multilingual AI Chat Assistant</h4>
+                <p>
+                    A context-aware chatbot with <strong>live gate telemetry context</strong>. Answers fan questions about transit routes, shortest queue times, seat locations, accessibility gates, and concessions. <strong>Automatically detects and responds in the user's language.</strong>
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🗺️</div>
+                <h4>Interactive Arena Navigation</h4>
+                <p>
+                    Real-time SVG stadium map with color-coded gate indicators. Fans can instantly identify the <strong>fastest entrance</strong> by looking at green (optimal) vs red (delayed) gate quadrants.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">⏱️</div>
+                <h4>Live Queue Time Cards</h4>
+                <p>
+                    Individual gate cards display current wait times in large, bold typography. Updated via <strong>WebSocket push</strong> so fans always see the latest estimates without refreshing.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">⚽</div>
+                <h4>Matchday AI Briefing</h4>
+                <p>
+                    AI-generated matchday intelligence covering crowd management tips, transport recommendations, and fan morale messages. Includes <strong>FIFA 2026 venue data</strong> across all host cities in USA, Canada, and Mexico.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <!-- ============ GENERATIVE AI INTEGRATION ============ -->
+    <section class="features-section">
+        <h3 class="section-title-center">🤖 Generative AI Architecture</h3>
+        <p class="section-desc-center">Triple-tier AI resilience: Google Gemini → Groq LLaMA → Offline fallback. Never fails.</p>
+
+        <div class="card-main" style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                <thead>
+                    <tr style="border-bottom: 1.5px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
+                        <th style="padding: 0.75rem 0.5rem;">AI Feature</th>
+                        <th style="padding: 0.75rem 0.5rem;">Description</th>
+                        <th style="padding: 0.75rem 0.5rem;">Primary Model</th>
+                        <th style="padding: 0.75rem 0.5rem;">Fallback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 1rem 0.5rem; font-weight: 600;">Fan Chat Assistant</td>
+                        <td style="padding: 1rem 0.5rem; color: var(--text-muted);">Multilingual real-time guest support with live gate telemetry context</td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-active">Gemini 2.5 Flash</span></td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-pending">Groq LLaMA 3.3</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 1rem 0.5rem; font-weight: 600;">Incident Classifier</td>
+                        <td style="padding: 1rem 0.5rem; color: var(--text-muted);">Auto-classifies severity (Low/Medium/High) and generates dispatch protocols</td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-active">Gemini 2.5 Flash</span></td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-pending">Groq LLaMA 3.3</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 1rem 0.5rem; font-weight: 600;">Flow Optimizer</td>
+                        <td style="padding: 1rem 0.5rem; color: var(--text-muted);">Analyzes gate congestion and recommends staff movements</td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-active">Gemini 2.5 Pro</span></td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-pending">Groq LLaMA 3.3</span></td>
+                    </tr>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <td style="padding: 1rem 0.5rem; font-weight: 600;">PA Announcements</td>
+                        <td style="padding: 1rem 0.5rem; color: var(--text-muted);">Generates multilingual stadium-wide broadcast text (6 languages)</td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-active">Gemini 2.5 Flash</span></td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-pending">Groq LLaMA 3.3</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 1rem 0.5rem; font-weight: 600;">Matchday Briefing</td>
+                        <td style="padding: 1rem 0.5rem; color: var(--text-muted);">AI-generated operations intelligence for crowd, transport, and fan morale</td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-active">Gemini 2.5 Flash</span></td>
+                        <td style="padding: 1rem 0.5rem;"><span class="badge badge-pending">Groq LLaMA 3.3</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ============ TECHNOLOGY & SECURITY ============ -->
+    <section class="features-section">
+        <h3 class="section-title-center">🛡️ Technology & Security</h3>
+        <p class="section-desc-center">Enterprise-grade architecture built for the scale of 80,000-seat World Cup venues.</p>
+
+        <div class="features-grid">
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🐍</div>
+                <h4>Python Flask Backend</h4>
+                <p>
+                    Modular Flask application with Blueprints (auth, api, dashboard). <strong>SQLAlchemy ORM</strong> with eager loading, connection pooling, and 30-second in-memory gate cache for high-frequency reads.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🔌</div>
+                <h4>WebSocket Live Updates</h4>
+                <p>
+                    Flask-SocketIO broadcasts gate telemetry to all connected clients <strong>every 10 seconds</strong>. Dashboard tables, SVG heatmaps, and fan cards update instantly without page refresh.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🔒</div>
+                <h4>Production Security</h4>
+                <p>
+                    CSRF token validation on all mutations, XSS input escaping (MarkupSafe), PBKDF2 password hashing, rate limiting, and HTTP security headers (<strong>CSP, X-Frame-Options, nosniff</strong>). HttpOnly session cookies.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">♿</div>
+                <h4>WCAG AA Accessibility</h4>
+                <p>
+                    Skip navigation links, ARIA landmarks and roles, <code>aria-live</code> dynamic regions, <code>aria-required</code> form attributes, keyboard <strong>focus-visible rings</strong>, and semantic HTML5 structure throughout.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🧪</div>
+                <h4>27 Automated Tests</h4>
+                <p>
+                    Comprehensive test suite covering authentication, RBAC access control, CSRF enforcement, XSS prevention, staff math validation, AI classification, API fallback chains, <strong>WebSocket telemetry</strong>, and analytics endpoints.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🚀</div>
+                <h4>Cloud Deployment</h4>
+                <p>
+                    Deployed on <strong>Render</strong> with auto-deploy from GitHub. Gunicorn WSGI server with gthread workers, 120s LLM timeout, PostgreSQL production database with connection pool recycling.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <!-- ============ FIFA 2026 CONTEXT ============ -->
+    <section class="card-main" style="border-left: 5px solid var(--primary); background-color: rgba(61, 106, 74, 0.03);">
+        <span class="badge badge-active" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; margin-bottom: 0.8rem; display: inline-block;">FIFA World Cup 2026</span>
+        <h3 style="font-size: 1.4rem; color: var(--text-main); margin-bottom: 1rem;">Tournament Context</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem;">
+            <div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Host Countries</p>
+                <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);">🇺🇸 USA &nbsp;·&nbsp; 🇨🇦 Canada &nbsp;·&nbsp; 🇲🇽 Mexico</p>
+            </div>
+            <div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Total Matches</p>
+                <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);">104 Matches</p>
+            </div>
+            <div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Tournament Dates</p>
+                <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);">June 11 – July 19, 2026</p>
+            </div>
+            <div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem;">Key Venues</p>
+                <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-main);">MetLife · SoFi · AT&T · Azteca</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="card-main" style="text-align: center; padding: 3rem 2rem; background: linear-gradient(135deg, rgba(61, 106, 74, 0.06), rgba(0, 230, 118, 0.04));">
+        <h3 style="font-size: 1.8rem; margin-bottom: 0.8rem; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Ready to Experience Smart Stadium Ops?</h3>
+        <p style="font-size: 1rem; color: var(--text-muted); max-width: 500px; margin: 0 auto 1.5rem;">Register as an Operations staff member to access the full Command Center, or join as a Fan to explore the AI assistant.</p>
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('auth.register') }}" class="btn-primary" style="text-align: center; text-decoration: none; padding: 0.8rem 2.5rem; width: auto;">Get Started</a>
+            <a href="{{ url_for('auth.login') }}" class="btn-secondary" style="text-align: center; text-decoration: none; padding: 0.8rem 2.5rem; width: auto;">Sign In</a>
+        </div>
+    </section>
 </div>
 {% endblock %}
+
