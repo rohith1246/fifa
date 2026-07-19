@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="FIFA World Cup 2026 Smart Stadiums & Tournament Operations Command Dashboard.">
+    <meta name="csrf-token" content="{{ session.csrf_token }}">
+    <title>{% block title %}FIFA World Cup 2026 - Smart Stadium Command{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div class="container">
+        <!-- Main Sticky Header -->
+        <header class="app-header" role="banner">
+            <div class="header-logo">
+                <span class="logo-emoji">⚽</span>
+                <h1>FIFA 2026 Operations</h1>
+            </div>
+            {% if session.username %}
+            <div class="user-badge-header">
+                <span style="font-weight: 600; color: var(--accent);">{{ session.username }}</span> 
+                <span class="role-pill">{{ session.role | upper }}</span>
+            </div>
+            {% endif %}
+        </header>
+
+        <!-- Navigation Bar -->
+        {% if session.username %}
+        <nav class="nav-bar" aria-label="Main Navigation" role="navigation">
+            <a href="{{ url_for('dashboard') }}" class="btn-nav {% if request.path == '/dashboard' %}active{% endif %}" id="nav-dash">
+                <span class="nav-icon">📊</span> Stadium Dashboard
+            </a>
+            <a href="{{ url_for('logout') }}" class="btn-nav btn-logout" id="nav-logout" style="flex: 0.2;">
+                <span class="nav-icon">🚪</span> Logout
+            </a>
+        </nav>
+        {% endif %}
+
+        <!-- Content Area -->
+        <main id="main-content" class="main-content" role="main">
+            {% block content %}
+            {% endblock %}
+        </main>
+
+        <footer class="app-footer" role="contentinfo">
+            <p>FIFA World Cup 2026 &copy; Smart Stadiums Initiative. Operations Command Center.</p>
+        </footer>
+    </div>
+</body>
+</html>

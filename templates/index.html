@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}FIFA 2026 - Smart Stadium Initiative{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <!-- Hero Section -->
+    <section class="hero-section glass-hero">
+        <div class="hero-content">
+            <span class="badge badge-active" style="display: inline-block; width: fit-content; margin-bottom: 0.5rem;">FIFA 2026 Smart Stadiums</span>
+            <h2 class="hero-title">Intelligent World Cup Operations</h2>
+            <p class="hero-subtitle">
+                Optimize crowd flow, allocate gate staff dynamically, and dispatch emergency incident protocols in real time using advanced Generative AI orchestration.
+            </p>
+            <div class="hero-actions" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <a href="{{ url_for('register') }}" class="btn-primary" style="text-align: center; text-decoration: none; padding: 0.8rem 2rem; width: auto; flex: 1;">Register Account</a>
+                <a href="{{ url_for('login') }}" class="btn-secondary" style="text-align: center; text-decoration: none; padding: 0.8rem 2rem; width: auto; flex: 1;">Login Portal</a>
+            </div>
+        </div>
+        <div class="hero-graphic-card">
+            <!-- Simulated Stadium Circle -->
+            <svg class="stadium-graphic sway-anim" viewBox="0 0 100 100" style="height: 180px; width: 100%;">
+                <!-- Outer Ring -->
+                <ellipse cx="50" cy="50" rx="45" ry="35" fill="none" stroke="var(--primary)" stroke-width="3" />
+                <ellipse cx="50" cy="50" rx="40" ry="30" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4,4" />
+                <!-- Field -->
+                <ellipse cx="50" cy="50" rx="25" ry="18" fill="rgba(0, 230, 118, 0.15)" stroke="var(--accent)" stroke-width="2" />
+                <!-- Center Mark -->
+                <circle cx="50" cy="50" r="3" fill="var(--accent)" />
+                <line x1="50" y1="32" x2="50" y2="68" stroke="var(--accent)" stroke-width="1.5" />
+            </svg>
+            <p style="font-size: 0.8rem; text-align: center; color: var(--accent); font-weight: 600; margin-top: 1rem; text-transform: uppercase; letter-spacing: 0.05em;">Live Telemetry Connected</p>
+        </div>
+    </section>
+
+    <!-- Hackathon Challenge Card -->
+    <section class="challenge-section card-main" style="border-left: 5px solid var(--accent); background-color: rgba(0, 230, 118, 0.03);">
+        <span class="badge badge-pending" style="text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; margin-bottom: 0.8rem; display: inline-block;">Official Hackathon Challenge</span>
+        <h3 style="font-size: 1.4rem; color: var(--text-main); margin-bottom: 0.6rem;">Smart Stadiums & Tournament Operations</h3>
+        <p style="font-size: 1rem; color: var(--text-muted); line-height: 1.6; font-style: italic; margin-top: 0.5rem;">
+            "Create a GenAI-powered solution to optimize stadium operations and enhance the FIFA World Cup 2026 experience through intelligent, real-time assistance."
+        </p>
+    </section>
+
+    <!-- Core Operational Modules -->
+    <section class="features-section">
+        <h3 class="section-title-center">Command Center Modules</h3>
+        <p class="section-desc-center">Explore the system capabilities built to support matchday logistics.</p>
+
+        <div class="features-grid">
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🏟️</div>
+                <h4>Interactive Stadium Telemetry</h4>
+                <p>
+                    Monitor real-time gate capacities, staff counts, and queue wait times. Simulate crowd congestion spikes and view dynamic heatmaps.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">🚨</div>
+                <h4>AI Incident Classification</h4>
+                <p>
+                    Log on-field issues (medical, safety, facility blockages). GenAI automatically estimates severity levels and designs dispatcher instructions.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">⚙️</div>
+                <h4>AI Resource Optimization</h4>
+                <p>
+                    Perform balancing checks across the stadium. AI calculates optimized staff re-allocations to resolve bottlenecks and reduce delay times.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-icon-wrapper">💬</div>
+                <h4>Real-Time Fan Assistant</h4>
+                <p>
+                    A context-aware helper answering fan queries about stadium seating, accessibility coordinates, concessions, and local transit.
+                </p>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

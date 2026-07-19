@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+
+{% block title %}Operations Dashboard - FIFA Smart Stadium{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    {% if user.role == 'operations' %}
+    <!-- ================= OPERATIONS COMMAND CENTER ================= -->
+    <div class="ops-controls-header card-main" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; border-left: 5px solid var(--accent); padding: 1.5rem 2rem;">
+        <div>
+            <h3 style="font-size: 1.4rem;">Command Center Operations</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time crowd flow controls and resource dispatch triggers.</p>
+        </div>
+        <div style="display: flex; gap: 0.8rem;">
+            <button class="btn-secondary" id="btn-simulate-crowd" onclick="simulateCrowdSpike()" style="padding: 0.6rem 1.2rem; font-size: 0.85rem;">⚡ Simulate Crowd Shift</button>
+            <button class="btn-primary" id="btn-optimize-staff" onclick="getAIOptimization()" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; width: auto;">🧠 Run AI Flow Check</button>
+        </div>
+    </div>
+
+    <!-- AI Optimization Banner (Hidden by default, shown when run) -->
+    <section class="alert-card" id="ops-optimization-banner" style="display: none; background-color: rgba(0, 230, 118, 0.08); border: 1px dashed var(--accent); margin-top: 1rem;" role="status" aria-live="polite">
+        <div class="alert-icon">🧠</div>
+        <div class="alert-content" style="width: 100%;">
+            <h4 style="color: var(--accent); font-weight: 700;">AI Optimization Recommendations</h4>
+            <div id="optimization-results" style="margin-top: 0.5rem; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <!-- Filled via JS -->
+            </div>
+        </div>
+    </section>
+
+    <div class="dashboard-grid" style="margin-top: 1.5rem;">
+        <!-- Left Main Column: Live Gate Status & Incidents -->
+        <div class="dashboard-main" style="display: flex; flex-direction: column; gap: 2rem;">
+            <!-- Live Gate Status -->
+            <section class="card-main">
+                <h3 class="section-title">Live Gate Telemetry</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem;">Real-time queue wait times and staff allocations at key entrances.</p>
+                
+                <div class="table-container" style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="border-bottom: 1.5px solid var(--border-color); color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">
+                                <th style="padding: 0.75rem 0.5rem;">Gate Name</th>
+                                <th style="padding: 0.75rem 0.5rem;">Staff Count</th>
+                                <th style="padding: 0.75rem 0.5rem;">Wait Time</th>
+                                <th style="padding: 0.75rem 0.5rem;">Current Capacity</th>
+                                <th style="padding: 0.75rem 0.5rem; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gates-table-body">
+                            {% for gate in gates %}
+                            <tr id="gate-row-{{ gate.id }}" style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.3s;">
+                                <td style="padding: 1rem 0.5rem; font-weight: 600;">{{ gate.name }}</td>
+                                <td style="padding: 1rem 0.5rem;" id="gate-staff-{{ gate.id }}">{{ gate.staff_count }} coordinators</td>
+                                <td style="padding: 1rem 0.5rem;">
+                                    {% if gate.queue_time > 25 %}
+                                    <span class="badge badge-paused" id="gate-wait-{{ gate.id }}">{{ gate.queue_time }} mins (Delay)</span>
+                                    {% elif gate.queue_time > 10 %}
+                                    <span class="badge badge-struggle" id="gate-wait-{{ gate.id }}">{{ gate.queue_time }} mins (Moderate)</span>
+                                    {% else %}
+                                    <span class="badge badge-active" id="gate-wait-{{ gate.id }}">{{ gate.queue_time }} mins (Optimal)</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 1rem 0.5rem;">{{ gate.capacity }} / 25,000</td>
+                                <td style="padding: 1rem 0.5rem; text-align: right;">
+                                    <button class="btn-secondary" onclick="openReallocateModal({{ gate.id }}, '{{ gate.name }}')" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; width: auto; display: inline-block;">Move Staff</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Dynamic Stadium Map -->
+            <section class="card-main">
+                <h3 class="section-title">Interactive Arena Heatmap</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Dynamic congestion mapping. Red quadrants represent gates experiencing delays.</p>
+                
+                <div style="display: flex; justify-content: center; background: rgba(0,0,0,0.2); padding: 2rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <svg viewBox="0 0 100 100" style="max-width: 320px; width: 100%; height: auto;">
+                        <!-- Stadium Outer Hull -->
+                        <ellipse cx="50" cy="50" rx="46" ry="38" fill="none" stroke="var(--border-color)" stroke-width="2" />
+                        <ellipse cx="50" cy="50" rx="42" ry="34" fill="none" stroke="var(--border-color)" stroke-width="1" />
+                        
+                        <!-- Stadium Quadrant Wedges (Simulating Gates A, B, C, D) -->
+                        <!-- Gate D (North / VIP) -->
+                        <path id="svg-gate-4" d="M 15 32 A 42 34 0 0 1 85 32 L 70 38 A 26 20 0 0 0 30 38 Z" fill="rgba(0,230,118,0.2)" stroke="var(--border-color)" stroke-width="1" style="transition: fill 0.5s;" />
+                        <!-- Gate B (South) -->
+                        <path id="svg-gate-2" d="M 15 68 A 42 34 0 0 0 85 68 L 70 62 A 26 20 0 0 1 30 62 Z" fill="rgba(0,230,118,0.2)" stroke="var(--border-color)" stroke-width="1" style="transition: fill 0.5s;" />
+                        <!-- Gate A (East) -->
+                        <path id="svg-gate-1" d="M 85 32 A 42 34 0 0 1 85 68 L 70 62 A 26 20 0 0 0 70 38 Z" fill="rgba(0,230,118,0.2)" stroke="var(--border-color)" stroke-width="1" style="transition: fill 0.5s;" />
+                        <!-- Gate C (West) -->
+                        <path id="svg-gate-3" d="M 15 32 A 42 34 0 0 0 15 68 L 30 62 A 26 20 0 0 1 30 38 Z" fill="rgba(0,230,118,0.2)" stroke="var(--border-color)" stroke-width="1" style="transition: fill 0.5s;" />
+                        
+                        <!-- Playing Pitch (Center) -->
+                        <ellipse cx="50" cy="50" rx="22" ry="16" fill="rgba(0, 230, 118, 0.1)" stroke="var(--accent)" stroke-width="1.5" />
+                        <line x1="50" y1="34" x2="50" y2="66" stroke="var(--accent)" stroke-dasharray="2,2" />
+                        <circle cx="50" cy="50" r="2" fill="var(--accent)" />
+                    </svg>
+                </div>
+            </section>
+
+            <!-- Incident Command Panel -->
+            <section class="card-main">
+                <h3 class="section-title">Log Matchday Incident</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Report active stadium events. GenAI will automatically dispatch severity levels and notes.</p>
+                
+                <form id="form-log-incident" onsubmit="reportIncident(event)">
+                    <fieldset style="border: none; padding: 0; margin: 0;">
+                        <legend style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">Report Incident Form</legend>
+                        <div class="form-group">
+                            <label for="incident-title">Incident Headline</label>
+                            <input type="text" id="incident-title" placeholder="e.g. Turnstile malfunctioning at Gate B" required aria-required="true" max="100">
+                        </div>
+
+                        <div class="form-grid-log" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 1rem;">
+                            <div class="form-group">
+                                <label for="incident-category">Category</label>
+                                <select id="incident-category" required aria-required="true">
+                                    <option value="facilities">Facilities / Operations</option>
+                                    <option value="medical">Medical Assistance</option>
+                                    <option value="security">Crowd Safety / Security</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="incident-desc">Incident Description</label>
+                                <textarea id="incident-desc" rows="2" placeholder="Describe the active scene..." required aria-required="true"></textarea>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">Submit Dispatch Report</button>
+                </form>
+
+                <h4 style="margin-top: 2rem; font-size: 1.1rem; border-bottom: 1.5px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">Incident Registry</h4>
+                <div class="incident-list" id="incident-list-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% if not incidents %}
+                        <p id="no-incidents-msg" style="font-size: 0.85rem; color: var(--text-muted);">No active operational incidents reported.</p>
+                    {% else %}
+                        {% for inc in incidents %}
+                        <div class="incident-card card-main" style="padding: 1.2rem; border-top: 4.5px solid {% if inc.severity == 'High' %}#ef4444{% elif inc.severity == 'Medium' %}#f59e0b{% else %}var(--primary){% endif %}; margin: 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <h4 style="font-size: 1rem; color: var(--text-main);">{{ inc.title }}</h4>
+                                <span class="badge {% if inc.severity == 'High' %}badge-paused{% elif inc.severity == 'Medium' %}badge-struggle{% else %}badge-active{% endif %}">{{ inc.severity }} Severity</span>
+                            </div>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">{{ inc.description }}</p>
+                            <div style="margin-top: 0.8rem; background-color: rgba(255,255,255,0.02); padding: 0.6rem 0.8rem; border-radius: 6px; border-left: 3px solid var(--accent);">
+                                <strong style="font-size: 0.8rem; color: var(--accent); display: block; text-transform: uppercase;">AI Dispatch Action:</strong>
+                                <p style="font-size: 0.8rem; color: var(--text-main); margin-top: 0.2rem;">{{ inc.dispatch_notes }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        <!-- Right Side Column: Staff Reallocation Modals & Allocation Logs -->
+        <div class="dashboard-side" style="display: flex; flex-direction: column; gap: 2rem;">
+            <!-- Allocation Modal/Form Panel -->
+            <section class="card-main" id="allocation-control-panel">
+                <h3 class="section-title">Move Field Staff</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem;">Manually transfer stadium coordinators to re-balance gate wait times.</p>
+                
+                <form id="form-allocate-staff" onsubmit="allocateStaff(event)">
+                    <fieldset style="border: none; padding: 0; margin: 0;">
+                        <legend style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0;">Move Staff Form</legend>
+                        <div class="form-group">
+                            <label for="alloc-to-gate">Target Gate (Move To)</label>
+                            <select id="alloc-to-gate" required aria-required="true">
+                                {% for gate in gates %}
+                                <option value="{{ gate.id }}">{{ gate.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label for="alloc-from-gate">Source Gate (Move From)</label>
+                            <select id="alloc-from-gate" required aria-required="true">
+                                {% for gate in gates %}
+                                <option value="{{ gate.name }}">{{ gate.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label for="alloc-quantity">Staff Quantity</label>
+                            <input type="number" id="alloc-quantity" min="1" max="10" placeholder="1-10 coordinators" required aria-required="true">
+                        </div>
+
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label for="alloc-reason">Re-allocation Purpose</label>
+                            <input type="text" id="alloc-reason" placeholder="e.g. Relieve queue delay" required aria-required="true">
+                        </div>
+                    </fieldset>
+                    <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">Authorize Move</button>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ================= FAN ASSISTANT INTERFACE ================= -->
+    <div class="ops-controls-header card-main" style="border-left: 5px solid var(--primary); padding: 1.5rem 2rem; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 1.4rem;">FIFA Fan Assistant Center</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time directions, accessibility routing, and gate queue wait times.</p>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Left Side: Interactive Map & Live Queue times -->
+        <div class="dashboard-main" style="display: flex; flex-direction: column; gap: 2rem;">
+            <!-- Dynamic Stadium Map -->
+            <section class="card-main">
+                <h3 class="section-title">Interactive Arena Map</h3>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">Green sections represent gates with low wait times. Choose the fastest path to enter!</p>
+                
+                <div style="display: flex; justify-content: center; background: rgba(0,0,0,0.2); padding: 2rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <svg viewBox="0 0 100 100" style="max-width: 320px; width: 100%; height: auto;">
+                        <!-- Stadium Outer Hull -->
+                        <ellipse cx="50" cy="50" rx="46" ry="38" fill="none" stroke="var(--border-color)" stroke-width="2" />
+                        
+                        <!-- Wedges -->
+                        <path id="svg-gate-4" d="M 15 32 A 42 34 0 0 1 85 32 L 70 38 A 26 20 0 0 0 30 38 Z" fill="rgba(0,230,118,0.2)" stroke="var(--border-color)" stroke-width="1" style="transition: fill 0.5s;" />
+                        <path id="svg-gate-2" d="M 15 68 A 42 34 0 0 0 85 68 L 70 62 A 26 20 0 0 1 30 62 Z" fill="rgba(0,230,118,0.2)" stroke="var(--border-color)" stroke-width="1" style="transition: fill 0.5s;" />
+                        <path id="svg-gate-1" d="M 85 32 A 42 34 0 0 1 85 68 L 70 62 A 26 20 0 0 0 70 38 Z" fill="rgba(0,230,118,0.2)" stroke="var(--border-color)" stroke-width="1" style="transition: fill 0.5s;" />
+                        <path id="svg-gate-3" d="M 15 32 A 42 34 0 0 0 15 68 L 30 62 A 26 20 0 0 1 30 38 Z" fill="rgba(0,230,118,0.2)" stroke="var(--border-color)" stroke-width="1" style="transition: fill 0.5s;" />
+                        
+                        <ellipse cx="50" cy="50" rx="22" ry="16" fill="rgba(0, 230, 118, 0.1)" stroke="var(--accent)" stroke-width="1.5" />
+                    </svg>
+                </div>
+            </section>
+
+            <!-- Fast Queue Indicators -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                {% for gate in gates %}
+                <div class="card-main" style="padding: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; margin: 0;">
+                    <h4 style="font-size: 0.95rem; color: var(--text-main);">{{ gate.name }}</h4>
+                    <div style="display: flex; align-items: baseline; gap: 0.4rem;">
+                        <span style="font-size: 1.8rem; font-weight: 700; color: var(--accent);" id="gate-wait-fan-{{ gate.id }}">{{ gate.queue_time }}</span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">mins wait</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right Side: AI Assistant Chat -->
+        <div class="dashboard-side" style="display: flex; flex-direction: column;">
+            <section class="card-main" style="height: 500px; display: flex; flex-direction: column; padding: 0; overflow: hidden; margin: 0;">
+                <div class="chat-header" style="padding: 1.2rem 1.8rem; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 0.8rem;">
+                    <div class="coach-avatar">🤖</div>
+                    <div>
+                        <h4 style="font-size: 1rem; color: var(--text-main);">FIFA Smart Stadium Assistant</h4>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">Equipped with real-time gate telemetry</span>
+                    </div>
+                </div>
+
+                <!-- Chat Messages Area -->
+                <div class="chat-window" id="chat-window" role="log" aria-live="assertive" style="background-color: rgba(61, 106, 74, 0.02); flex: 1; padding: 1.8rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem;">
+                    {% if not chats %}
+                    <div class="chat-empty-state" id="chat-empty-state">
+                        <span style="font-size: 2rem;">⚽</span>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">Ask me about transit routes, shortest queues, seat coordinates, or accessibility gates!</p>
+                    </div>
+                    {% else %}
+                        {% for chat in chats %}
+                        <div class="chat-bubble {% if chat.sender == 'user' %}user-bubble{% else %}coach-bubble{% endif %}" style="max-width: 80%; padding: 0.8rem 1.2rem; border-radius: var(--radius-md); align-self: {% if chat.sender == 'user' %}flex-end{% else %}flex-start{% endif %}; background-color: {% if chat.sender == 'user' %}var(--primary){% else %}var(--primary-light){% endif %}; color: {% if chat.sender == 'user' %}#ffffff{% else %}var(--text-main){% endif %};">
+                            <p style="font-size: 0.9rem; margin: 0; line-height: 1.5;">{{ chat.message }}</p>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <!-- Input box -->
+                <form id="chat-input-form" onsubmit="submitFanChat(event)" class="chat-input-area" style="display: flex; gap: 0.8rem; padding: 1.2rem; border-top: 1px solid var(--border-color); background-color: var(--bg-card);">
+                    <input type="text" id="chat-input-field" placeholder="Ask about gate queues or directions..." required aria-label="Chat message" autocomplete="off" style="flex: 1; padding: 0.8rem 1.2rem; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); background-color: var(--bg-input); color: var(--text-main); outline: none;">
+                    <button type="submit" class="btn-primary" style="width: auto; padding: 0 1.8rem; margin: 0;">Send</button>
+                </form>
+            </section>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Scripts for real-time simulations and posting data -->
+<script>
+// Keep global client gates state
+let gatesState = [];
+
+function updateSVGHeatmap() {
+    gatesState.forEach(gate => {
+        const svgElement = document.getElementById(`svg-gate-${gate.id}`);
+        if (svgElement) {
+            // Apply color scaling based on wait times
+            if (gate.queue_time > 25) {
+                // Red (Delay)
+                svgElement.setAttribute("fill", "rgba(239, 68, 68, 0.45)");
+            } else if (gate.queue_time > 10) {
+                // Amber / Orange (Moderate)
+                svgElement.setAttribute("fill", "rgba(245, 158, 11, 0.45)");
+            } else {
+                // Green (Optimal)
+                svgElement.setAttribute("fill", "rgba(0, 230, 118, 0.45)");
+            }
+        }
+    });
+}
+
+function updateLocalGateTelemetry(gates) {
+    gatesState = gates;
+    updateSVGHeatmap();
+    
+    // Update local table/cards elements dynamically
+    gates.forEach(gate => {
+        // Table waits
+        const waitSpan = document.getElementById(`gate-wait-${gate.id}`);
+        if (waitSpan) {
+            waitSpan.textContent = `${gate.queue_time} mins`;
+            waitSpan.className = `badge ${gate.queue_time > 25 ? 'badge-paused' : (gate.queue_time > 10 ? 'badge-struggle' : 'badge-active')}`;
+        }
+        // Table staff count
+        const staffTd = document.getElementById(`gate-staff-${gate.id}`);
+        if (staffTd) {
+            staffTd.textContent = `${gate.staff_count} coordinators`;
+        }
+        // Fan cards
+        const fanCardWait = document.getElementById(`gate-wait-fan-${gate.id}`);
+        if (fanCardWait) {
+            fanCardWait.textContent = gate.queue_time;
+        }
+    });
+}
+
+// Pre-initialize map telemetry from HTML variables
+document.addEventListener("DOMContentLoaded", () => {
+    gatesState = [
+        {% for gate in gates %}
+        { id: {{ gate.id }}, name: "{{ gate.name }}", queue_time: {{ gate.queue_time }}, staff_count: {{ gate.staff_count }} },
+        {% endfor %}
+    ];
+    updateSVGHeatmap();
+});
+
+async function simulateCrowdSpike() {
+    const btn = document.getElementById("btn-simulate-crowd");
+    btn.disabled = true;
+    btn.textContent = "Simulating...";
+
+    try {
+        const response = await fetch("/api/gates/simulate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": "{{ session.csrf_token }}"
+            }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            updateLocalGateTelemetry(data.gates);
+            alert("Simulated World Cup crowd density shift complete.");
+        } else {
+            alert("Simulation failed: " + data.error);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Server error during simulation.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "⚡ Simulate Crowd Shift";
+    }
+}
+
+async function getAIOptimization() {
+    const btn = document.getElementById("btn-optimize-staff");
+    const banner = document.getElementById("ops-optimization-banner");
+    const container = document.getElementById("optimization-results");
+    
+    btn.disabled = true;
+    btn.textContent = "Analyzing Flow...";
+
+    try {
+        const response = await fetch("/api/operations/optimize", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": "{{ session.csrf_token }}"
+            }
+        });
+        const data = await response.json();
+        if (response.ok) {
+            container.innerHTML = "";
+            const recommendations = data.recommendations;
+            if (!recommendations || recommendations.length === 0) {
+                container.innerHTML = "<p>Stadium flow is currently balanced. No immediate staff movements required.</p>";
+            } else {
+                recommendations.forEach(rec => {
+                    const item = document.createElement("div");
+                    item.style.padding = "0.6rem";
+                    item.style.backgroundColor = "rgba(255,255,255,0.02)";
+                    item.style.borderRadius = "4px";
+                    item.style.borderLeft = "3px solid var(--accent)";
+                    item.innerHTML = `<strong>Move ${rec.quantity} Coordinators</strong> from <em>${rec.from_gate}</em> ➔ Gate ID: ${rec.to_gate_id} <br/> <span style="font-size: 0.75rem; color: var(--text-muted);">${rec.reason}</span>`;
+                    container.appendChild(item);
+                });
+            }
+            banner.style.display = "flex";
+        } else {
+            alert("Optimization failed: " + data.error);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Server error during optimization.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "🧠 Run AI Flow Check";
+    }
+}
+
+function openReallocateModal(gateId, gateName) {
+    document.getElementById("alloc-to-gate").value = gateId;
+    document.getElementById("alloc-from-gate").focus();
+}
+
+async function allocateStaff(event) {
+    event.preventDefault();
+    const gateId = document.getElementById("alloc-to-gate").value;
+    const fromGate = document.getElementById("alloc-from-gate").value;
+    const quantity = document.getElementById("alloc-quantity").value;
+    const reason = document.getElementById("alloc-reason").value;
+
+    try {
+        const response = await fetch("/api/staff/allocate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": "{{ session.csrf_token }}"
+            },
+            body: JSON.stringify({
+                gate_id: gateId,
+                from_gate: fromGate,
+                quantity: quantity,
+                reason: reason
+            })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            // Update local telemetry
+            const updatedGates = gatesState.map(g => {
+                if (g.id == data.target_gate.id) return data.target_gate;
+                if (data.source_gate && g.id == data.source_gate.id) return data.source_gate;
+                return g;
+            });
+            updateLocalGateTelemetry(updatedGates);
+
+            alert(`Successfully moved ${quantity} staff coordinators!`);
+            document.getElementById("alloc-quantity").value = "";
+            document.getElementById("alloc-reason").value = "";
+        } else {
+            alert("Allocation failed: " + data.error);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Server error during staff allocation.");
+    }
+}
+
+async function reportIncident(event) {
+    event.preventDefault();
+    const title = document.getElementById("incident-title").value;
+    const category = document.getElementById("incident-category").value;
+    const description = document.getElementById("incident-desc").value;
+
+    const btn = event.target.querySelector("button[type='submit']");
+    btn.disabled = true;
+    btn.textContent = "Classifying incident...";
+
+    try {
+        const response = await fetch("/api/incident/report", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": "{{ session.csrf_token }}"
+            },
+            body: JSON.stringify({
+                title: title,
+                category: category,
+                description: description
+            })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            // Prepend new incident to list
+            const listContainer = document.getElementById("incident-list-container");
+            const noMsg = document.getElementById("no-incidents-msg");
+            if (noMsg) noMsg.style.display = "none";
+
+            const inc = data.incident;
+            const card = document.createElement("div");
+            card.className = "incident-card card-main";
+            card.style.padding = "1.2rem";
+            card.style.marginTop = "0";
+            card.style.borderTop = `4.5px solid ${inc.severity === 'High' ? '#ef4444' : (inc.severity === 'Medium' ? '#f59e0b' : 'var(--primary)')}`;
+            
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h4 style="font-size: 1rem; color: var(--text-main);">${inc.title}</h4>
+                    <span class="badge ${inc.severity === 'High' ? 'badge-paused' : (inc.severity === 'Medium' ? 'badge-struggle' : 'badge-active')}">${inc.severity} Severity</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">${inc.description}</p>
+                <div style="margin-top: 0.8rem; background-color: rgba(255,255,255,0.02); padding: 0.6rem 0.8rem; border-radius: 6px; border-left: 3px solid var(--accent);">
+                    <strong style="font-size: 0.8rem; color: var(--accent); display: block; text-transform: uppercase;">AI Dispatch Action:</strong>
+                    <p style="font-size: 0.8rem; color: var(--text-main); margin-top: 0.2rem;">${inc.dispatch_notes}</p>
+                </div>
+            `;
+            listContainer.insertBefore(card, listContainer.firstChild);
+
+            document.getElementById("incident-title").value = "";
+            document.getElementById("incident-desc").value = "";
+            alert("Incident logged and AI-dispatched successfully!");
+        } else {
+            alert("Failed to report incident: " + data.error);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Server error during incident reporting.");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Submit Dispatch Report";
+    }
+}
+
+async function submitFanChat(event) {
+    event.preventDefault();
+    const inputField = document.getElementById("chat-input-field");
+    const query = inputField.value.trim();
+    if (!query) return;
+
+    // Clear field
+    inputField.value = "";
+
+    const chatWindow = document.getElementById("chat-window");
+    const emptyState = document.getElementById("chat-empty-state");
+    if (emptyState) emptyState.style.display = "none";
+
+    // Append User Bubble
+    const userBubble = document.createElement("div");
+    userBubble.className = "chat-bubble user-bubble";
+    userBubble.style.alignSelf = "flex-end";
+    userBubble.style.backgroundColor = "var(--primary)";
+    userBubble.style.color = "#ffffff";
+    userBubble.style.maxWidth = "80%";
+    userBubble.style.padding = "0.8rem 1.2rem";
+    userBubble.style.borderRadius = "var(--radius-md)";
+    userBubble.innerHTML = `<p style="font-size: 0.9rem; margin: 0; line-height: 1.5;">${query}</p>`;
+    chatWindow.appendChild(userBubble);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    // Append Typing Indicator
+    const typingBubble = document.createElement("div");
+    typingBubble.className = "chat-bubble coach-bubble typing-bubble";
+    typingBubble.style.alignSelf = "flex-start";
+    typingBubble.style.backgroundColor = "var(--primary-light)";
+    typingBubble.style.color = "var(--text-main)";
+    typingBubble.style.maxWidth = "80%";
+    typingBubble.style.padding = "0.8rem 1.2rem";
+    typingBubble.style.borderRadius = "var(--radius-md)";
+    typingBubble.innerHTML = `<p style="font-size: 0.9rem; margin: 0; line-height: 1.5; color: var(--text-muted);">Assistant is thinking...</p>`;
+    chatWindow.appendChild(typingBubble);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": "{{ session.csrf_token }}"
+            },
+            body: JSON.stringify({ message: query })
+        });
+        const data = await response.json();
+        
+        // Remove typing indicator
+        typingBubble.remove();
+
+        if (response.ok) {
+            const aiBubble = document.createElement("div");
+            aiBubble.className = "chat-bubble coach-bubble";
+            aiBubble.style.alignSelf = "flex-start";
+            aiBubble.style.backgroundColor = "var(--primary-light)";
+            aiBubble.style.color = "var(--text-main)";
+            aiBubble.style.maxWidth = "80%";
+            aiBubble.style.padding = "0.8rem 1.2rem";
+            aiBubble.style.borderRadius = "var(--radius-md)";
+            aiBubble.innerHTML = `<p style="font-size: 0.9rem; margin: 0; line-height: 1.5;">${data.response}</p>`;
+            chatWindow.appendChild(aiBubble);
+        } else {
+            const errBubble = document.createElement("div");
+            errBubble.className = "chat-bubble coach-bubble";
+            errBubble.style.alignSelf = "flex-start";
+            errBubble.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+            errBubble.style.color = "#ef4444";
+            errBubble.style.maxWidth = "80%";
+            errBubble.style.padding = "0.8rem 1.2rem";
+            errBubble.style.borderRadius = "var(--radius-md)";
+            errBubble.innerHTML = `<p style="font-size: 0.9rem; margin: 0; line-height: 1.5;">Error: ${data.error}</p>`;
+            chatWindow.appendChild(errBubble);
+        }
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    } catch (e) {
+        console.error(e);
+        typingBubble.remove();
+        alert("Server error during assistant communication.");
+    }
+}
+</script>
+{% endblock %}
