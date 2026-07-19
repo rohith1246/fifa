@@ -422,6 +422,67 @@ class SmartStadiumTestCase(unittest.TestCase):
             self.assertEqual(result, "Tactical response: deploy first response crew.")
             self.assertTrue(mock_groq_post.called)
 
+    # 14. AI Announcement Generator Tests
+    @patch("app.run_ai_generation")
+    def test_generate_announcement_success(self, mock_run_ai):
+        """Verify operations team can successfully generate an announcement text via AI."""
+        mock_run_ai.return_value = (
+            "Attention all fans, Gate C is now open for entry.",
+            "gemini",
+        )
+        payload = {"topic": "Gate C is now open", "language": "English"}
+        response = self.client.post(
+            "/api/announce",
+            data=json.dumps(payload),
+            content_type="application/json",
+            headers={"X-CSRF-Token": "mock_token"},
+        )
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.get_data(as_text=True))
+        self.assertIn("Attention all fans", data["announcement"])
+        self.assertEqual(data["language"], "English")
+
+    def test_generate_announcement_unauthorized_for_fan(self):
+        """Verify that fans cannot access the AI announcement generation endpoint."""
+        # Switch session role to fan
+        with self.client.session_transaction() as sess:
+            sess["role"] = "fan"
+            sess["username"] = self.fan_user.username
+            sess["user_id"] = self.fan_user.id
+
+        payload = {"topic": "Gate C is open", "language": "English"}
+        response = self.client.post(
+            "/api/announce",
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 401)
+
+    # 15. Matchday Context Tests
+    @patch("app.run_ai_generation")
+    def test_matchday_context_success(self, mock_run_ai):
+        """Verify logged-in user can access tournament context and AI ops briefing."""
+        mock_run_ai.return_value = (
+            "Briefing: Plan for high transport volumes at Gate B today.",
+            "gemini",
+        )
+        response = self.client.get("/api/matchday")
+        self.assertEqual(response.status_code, 200)
+        data = json.loads(response.get_data(as_text=True))
+        self.assertEqual(data["total_matches"], 104)
+        self.assertEqual(data["host_countries"], ["USA", "Canada", "Mexico"])
+        self.assertIn("MetLife Stadium", [v["name"] for v in data["venues"]])
+        self.assertIn("Briefing: Plan for high", data["operations_briefing"])
+
+    def test_matchday_context_unauthorized_for_anonymous(self):
+        """Verify that anonymous users cannot access the matchday endpoint."""
+        # Clear session
+        with self.client.session_transaction() as sess:
+            sess.clear()
+
+        response = self.client.get("/api/matchday")
+        self.assertEqual(response.status_code, 401)
+
 
 if __name__ == "__main__":
     unittest.main()
