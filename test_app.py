@@ -3,7 +3,8 @@ import json
 import unittest
 from unittest.mock import patch
 from werkzeug.security import generate_password_hash
-from app import app, run_ai_generation
+from app import app
+from services.ai_service import run_ai_generation
 from database import Base, engine, SessionLocal
 from models import User, StadiumGate, Incident, ChatLog, StaffAllocation
 
@@ -168,7 +169,7 @@ class SmartStadiumTestCase(unittest.TestCase):
             app.config["TESTING"] = True
 
     # 6. Input HTML-escaping stored XSS prevention
-    @patch("app.run_ai_generation")
+    @patch("routes.api.run_ai_generation")
     def test_xss_escaping_on_incident_inputs(self, mock_run_ai):
         """Verify that reported incident descriptions are html-escaped before DB storage."""
         mock_response_json = {
@@ -302,7 +303,7 @@ class SmartStadiumTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     # 9. AI Incident Classification Validation Test
-    @patch("app.run_ai_generation")
+    @patch("routes.api.run_ai_generation")
     def test_incident_reporting_with_ai_classification(self, mock_run_ai):
         """Verify that reporting an incident categorizes severity and action protocol using AI."""
         mock_response_json = {
@@ -330,7 +331,7 @@ class SmartStadiumTestCase(unittest.TestCase):
         )
 
     # 10. AI Optimization Planner Test
-    @patch("app.run_ai_generation")
+    @patch("routes.api.run_ai_generation")
     def test_operations_ai_flow_optimization(self, mock_run_ai):
         """Verify that operations optimization recommendations are successfully returned by AI."""
         mock_recommendations = [
@@ -350,7 +351,7 @@ class SmartStadiumTestCase(unittest.TestCase):
         self.assertEqual(data["recommendations"][0]["quantity"], 2)
 
     # 11. Fan Real-Time Chat Log Test
-    @patch("app.run_ai_generation")
+    @patch("routes.api.run_ai_generation")
     def test_fan_realtime_chat_saves_and_responds(self, mock_run_ai):
         """Verify that fan chat helper stores conversation in DB and returns AI reply."""
         mock_run_ai.return_value = (
@@ -382,7 +383,7 @@ class SmartStadiumTestCase(unittest.TestCase):
         self.assertEqual(len(data["gates"]), 2)
 
     # 13. Fallback to Groq API on Gemini failure
-    @patch("app.requests.post")
+    @patch("services.ai_service.requests.post")
     def test_ai_fallback_on_gemini_failure(self, mock_groq_post):
         """Verify that if Gemini fails, the app falls back to Groq REST API successfully."""
         mock_response_json = {
@@ -407,7 +408,7 @@ class SmartStadiumTestCase(unittest.TestCase):
             self.assertTrue(mock_groq_post.called)
 
     # 14. AI Announcement Generator Tests
-    @patch("app.run_ai_generation")
+    @patch("routes.api.run_ai_generation")
     def test_generate_announcement_success(self, mock_run_ai):
         """Verify operations team can successfully generate an announcement text via AI."""
         mock_run_ai.return_value = (
@@ -443,7 +444,7 @@ class SmartStadiumTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
 
     # 15. Matchday Context Tests
-    @patch("app.run_ai_generation")
+    @patch("routes.api.run_ai_generation")
     def test_matchday_context_success(self, mock_run_ai):
         """Verify logged-in user can access tournament context and AI ops briefing."""
         mock_run_ai.return_value = (
