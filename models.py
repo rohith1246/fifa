@@ -42,7 +42,7 @@ class StadiumGate(Base):
     __tablename__ = "stadium_gates"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False, unique=True)
+    name = Column(String(100), nullable=False, unique=True, index=True)
     capacity = Column(Integer, nullable=False, default=10000)
     queue_time = Column(
         Integer, nullable=False, default=10
@@ -115,13 +115,13 @@ class Incident(Base):
         String(100), nullable=False
     )  # "medical", "security", "facilities"
     severity = Column(
-        String(50), nullable=False, default="Low"
+        String(50), nullable=False, default="Low", index=True
     )  # "Low", "Medium", "High"
     status = Column(
         String(50), nullable=False, default="Pending"
     )  # "Pending", "Dispatched", "Resolved"
     dispatch_notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
 
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the Incident model fields into a Python dictionary."""
@@ -150,7 +150,7 @@ class ChatLog(Base):
     )
     sender = Column(String(50), nullable=False, default="user")  # "user" or "assistant"
     message = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, index=True)
 
     # Relationships
     user = relationship("User", back_populates="chats")
