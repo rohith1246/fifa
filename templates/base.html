@@ -28,10 +28,10 @@
         <!-- Navigation Bar -->
         {% if session.username %}
         <nav class="nav-bar" aria-label="Main Navigation" role="navigation">
-            <a href="{{ url_for('dashboard') }}" class="btn-nav {% if request.path == '/dashboard' %}active{% endif %}" id="nav-dash">
+            <a href="{{ url_for('dashboard.dashboard') }}" class="btn-nav {% if request.path == '/dashboard' %}active{% endif %}" id="nav-dash">
                 <span class="nav-icon">📊</span> Stadium Dashboard
             </a>
-            <a href="{{ url_for('logout') }}" class="btn-nav btn-logout" id="nav-logout" style="flex: 0.2;">
+            <a href="{{ url_for('auth.logout') }}" class="btn-nav btn-logout" id="nav-logout" style="flex: 0.2;">
                 <span class="nav-icon">🚪</span> Logout
             </a>
         </nav>
