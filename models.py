@@ -1,16 +1,7 @@
 import datetime
 import logging
 from typing import Dict, Any
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    Text,
-    DateTime,
-    ForeignKey,
-    Boolean,
-    text,
-)
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from database import Base, engine, SessionLocal
 

@@ -1,4 +1,5 @@
 import os
+import random
 import secrets
 import json
 import logging
@@ -21,7 +22,7 @@ from dotenv import load_dotenv
 from sqlalchemy.orm import joinedload
 from database import SessionLocal
 from models import User, StadiumGate, StaffAllocation, Incident, ChatLog, init_db
-from typing import Any, Tuple, Optional, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 from markupsafe import escape
 
 # Configure logging
@@ -39,7 +40,43 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", "fifa-stadium-ops-secret-key-2026
 app.permanent_session_lifetime = datetime.timedelta(hours=2)
 
 # Simple in-memory rate limiter
-_rate_limits: dict = {}
+_rate_limits: Dict[str, List[float]] = {}
+
+# In-memory gate telemetry cache (30-second TTL) to reduce redundant DB reads
+_gate_cache: Dict[str, Any] = {"data": None, "expires_at": 0.0}
+
+
+def get_cached_gate_dicts(db: Any) -> List[Dict[str, Any]]:
+    """
+    Returns cached stadium gate data as serialized dictionaries.
+    Caches for 30 seconds to reduce redundant DB reads during high traffic.
+    Stores plain dicts (not ORM objects) to prevent SQLAlchemy detached-instance errors
+    after the originating session is closed.
+    Args:
+        db: Active SQLAlchemy database session.
+    Returns:
+        List[Dict[str, Any]]: Ordered list of gate data dictionaries.
+    """
+    now = time.time()
+    if _gate_cache["data"] is not None and now < _gate_cache["expires_at"]:
+        return _gate_cache["data"]  # type: ignore[return-value]
+    gates = (
+        db.query(StadiumGate)
+        .options(joinedload(StadiumGate.allocations))
+        .order_by(StadiumGate.name)
+        .all()
+    )
+    # Serialize to dicts immediately so the cache is session-independent
+    gate_dicts: List[Dict[str, Any]] = [g.to_dict() for g in gates]
+    _gate_cache["data"] = gate_dicts
+    _gate_cache["expires_at"] = now + 30.0
+    return gate_dicts
+
+
+def invalidate_gate_cache() -> None:
+    """Clears the in-memory gate cache to force a fresh DB read on next request."""
+    _gate_cache["data"] = None
+    _gate_cache["expires_at"] = 0.0
 
 
 def rate_limit_check(
@@ -342,13 +379,27 @@ def dashboard() -> Any:
 
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.id == session["user_id"]).first()
-        gates = db.query(StadiumGate).order_by(StadiumGate.name).all()
-        incidents = db.query(Incident).order_by(Incident.created_at.desc()).all()
+        user = (
+            db.query(User)
+            .options(joinedload(User.chats))
+            .filter(User.id == session["user_id"])
+            .first()
+        )
+        # Query fresh ORM objects (not cache) for template rendering
+        gates = (
+            db.query(StadiumGate)
+            .options(joinedload(StadiumGate.allocations))
+            .order_by(StadiumGate.name)
+            .all()
+        )
+        incidents = (
+            db.query(Incident).order_by(Incident.created_at.desc()).limit(50).all()
+        )
         chats = (
             db.query(ChatLog)
             .filter(ChatLog.user_id == user.id)
             .order_by(ChatLog.created_at)
+            .limit(100)
             .all()
         )
         return render_template(
@@ -385,12 +436,12 @@ def api_chat() -> Any:
         db.add(user_log)
         db.commit()
 
-        # Fetch gate statistics to provide local context to the AI assistant
-        gates = db.query(StadiumGate).all()
+        # Use serialized dict cache to minimise redundant DB reads
+        gate_dicts = get_cached_gate_dicts(db)
         gate_status = "\n".join(
             [
-                f"- {g.name}: Queue Time: {g.queue_time} mins, Staff: {g.staff_count}"
-                for g in gates
+                f"- {g['name']}: Queue Time: {g['queue_time']} mins, Staff: {g['staff_count']}"
+                for g in gate_dicts
             ]
         )
 
@@ -559,6 +610,7 @@ def allocate_staff() -> Any:
         )
         db.add(allocation)
         db.commit()
+        invalidate_gate_cache()  # Force fresh telemetry after staff movement
 
         return (
             jsonify(
@@ -589,11 +641,12 @@ def optimize_operations() -> Any:
 
     db = SessionLocal()
     try:
-        gates = db.query(StadiumGate).all()
+        # Use serialized dict cache so gate data remains valid after session closes
+        gate_dicts = get_cached_gate_dicts(db)
         gate_status = "\n".join(
             [
-                f"- ID: {g.id}, Name: {g.name}, Staff: {g.staff_count}, Queue Time: {g.queue_time} mins"
-                for g in gates
+                f"- ID: {g['id']}, Name: {g['name']}, Staff: {g['staff_count']}, Queue Time: {g['queue_time']} mins"
+                for g in gate_dicts
             ]
         )
 
@@ -640,8 +693,6 @@ def simulate_spike() -> Any:
     if "user_id" not in session or session.get("role") != "operations":
         return jsonify({"error": "Operations access required."}), 401
 
-    import random
-
     db = SessionLocal()
     try:
         gates = db.query(StadiumGate).all()
@@ -650,6 +701,7 @@ def simulate_spike() -> Any:
             g.queue_time = random.randint(5, 45)
             g.staff_count = random.randint(3, 15)
         db.commit()
+        invalidate_gate_cache()  # Bust cache after simulation fluctuates gate data
 
         return (
             jsonify(
