@@ -468,6 +468,17 @@ class SmartStadiumTestCase(unittest.TestCase):
         response = self.client.get("/api/matchday")
         self.assertEqual(response.status_code, 401)
 
+    # 16. WebSocket Telemetry Tests
+    def test_socketio_gate_update_emitted(self):
+        """Verify WebSocket emits gate_update event on client connect."""
+        from flask_socketio import SocketIOTestClient
+        from app import socketio
+
+        socket_client = SocketIOTestClient(app, socketio, namespace="/stadium")
+        received = socket_client.get_received("/stadium")
+        self.assertTrue(any(r["name"] == "gate_update" for r in received))
+        socket_client.disconnect("/stadium")
+
 
 if __name__ == "__main__":
     unittest.main()

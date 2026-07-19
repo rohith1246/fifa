@@ -33,7 +33,7 @@
         <div class="dashboard-main" style="display: flex; flex-direction: column; gap: 2rem;">
             <!-- Live Gate Status -->
             <section class="card-main">
-                <h3 class="section-title">Live Gate Telemetry</h3>
+                <h3 class="section-title">Live Gate Telemetry <span id="live-indicator-ops" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); margin-left: 0.8rem; background: rgba(255,255,255,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">Connecting...</span></h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.2rem;">Real-time queue wait times and staff allocations at key entrances.</p>
                 
                 <div class="table-container" style="overflow-x: auto;">
@@ -235,7 +235,7 @@
     <div class="ops-controls-header card-main" style="border-left: 5px solid var(--primary); padding: 1.5rem 2rem; margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-                <h3 style="font-size: 1.4rem;">FIFA Fan Assistant Center</h3>
+                <h3 style="font-size: 1.4rem;">FIFA Fan Assistant Center <span id="live-indicator-fan" style="font-size:0.75rem; font-weight:600; color:var(--text-muted); margin-left: 0.8rem; background: rgba(255,255,255,0.05); padding: 0.2rem 0.5rem; border-radius: 4px;">Connecting...</span></h3>
                 <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time directions, accessibility routing, and gate queue wait times.</p>
             </div>
             <button class="btn-secondary" id="btn-matchday" onclick="loadMatchdayBriefing()" style="padding: 0.6rem 1.2rem; font-size: 0.85rem;">⚽ Matchday Briefing</button>
@@ -717,5 +717,45 @@ async function loadMatchdayBriefing() {
         btn.textContent = "⚽ Matchday Briefing";
     }
 }
+</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+// Connect to the stadium WebSocket namespace
+const stadiumSocket = io("/stadium");
+
+stadiumSocket.on("connect", () => {
+    const opsIndicator = document.getElementById("live-indicator-ops");
+    const fanIndicator = document.getElementById("live-indicator-fan");
+    
+    if (opsIndicator) {
+        opsIndicator.textContent = "🟢 LIVE";
+        opsIndicator.style.color = "var(--accent)";
+    }
+    if (fanIndicator) {
+        fanIndicator.textContent = "🟢 LIVE";
+        fanIndicator.style.color = "var(--accent)";
+    }
+});
+
+stadiumSocket.on("disconnect", () => {
+    const opsIndicator = document.getElementById("live-indicator-ops");
+    const fanIndicator = document.getElementById("live-indicator-fan");
+    
+    if (opsIndicator) {
+        opsIndicator.textContent = "🔴 Offline";
+        opsIndicator.style.color = "#ef4444";
+    }
+    if (fanIndicator) {
+        fanIndicator.textContent = "🔴 Offline";
+        fanIndicator.style.color = "#ef4444";
+    }
+});
+
+// Automatically process real-time telemetry updates pushed from server
+stadiumSocket.on("gate_update", (data) => {
+    if (data && data.gates) {
+        updateLocalGateTelemetry(data.gates);
+    }
+});
 </script>
 {% endblock %}

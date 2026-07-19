@@ -6,3 +6,7 @@ google-generativeai==0.7.2
 gunicorn==22.0.0
 requests==2.32.3
 MarkupSafe>=2.1.0
+flask-socketio==5.3.6
+eventlet==0.33.3
+
+
