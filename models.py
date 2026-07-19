@@ -44,9 +44,7 @@ class StadiumGate(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False, unique=True, index=True)
     capacity = Column(Integer, nullable=False, default=10000)
-    queue_time = Column(
-        Integer, nullable=False, default=10
-    )  # Estimated wait time in minutes
+    queue_time = Column(Integer, nullable=False, default=10)  # Estimated wait time in minutes
     staff_count = Column(Integer, nullable=False, default=5)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -111,9 +109,7 @@ class Incident(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(200), nullable=False)
     description = Column(Text, nullable=False)
-    category = Column(
-        String(100), nullable=False
-    )  # "medical", "security", "facilities"
+    category = Column(String(100), nullable=False)  # "medical", "security", "facilities"
     severity = Column(
         String(50), nullable=False, default="Low", index=True
     )  # "Low", "Medium", "High"

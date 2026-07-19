@@ -26,9 +26,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from markupsafe import escape
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
 # Load env variables
@@ -79,9 +77,7 @@ def invalidate_gate_cache() -> None:
     _gate_cache["expires_at"] = 0.0
 
 
-def rate_limit_check(
-    key: str, max_requests: int = 15, window_seconds: int = 60
-) -> bool:
+def rate_limit_check(key: str, max_requests: int = 15, window_seconds: int = 60) -> bool:
     """
     Checks if a client has exceeded a request rate limit.
     Args:
@@ -137,9 +133,7 @@ def csrf_protect() -> Any:
         if not token or token != session.get("csrf_token"):
             logger.warning(f"CSRF violation blocked on route: {request.path}")
             return (
-                jsonify(
-                    {"error": "Security check failed. CSRF token missing or invalid."}
-                ),
+                jsonify({"error": "Security check failed. CSRF token missing or invalid."}),
                 400,
             )
 
@@ -205,9 +199,7 @@ def run_ai_generation(prompt: str, response_type: str = "text") -> Tuple[str, st
     # Fallback: Groq REST API (direct REST request to avoid proxy configs)
     if groq_key and groq_key != "your_groq_api_key_here":
         try:
-            logger.info(
-                "Gemini failed or missing API Key. Shifting to Groq REST fallback..."
-            )
+            logger.info("Gemini failed or missing API Key. Shifting to Groq REST fallback...")
             headers = {
                 "Authorization": f"Bearer {groq_key}",
                 "Content-Type": "application/json",
@@ -236,9 +228,7 @@ def run_ai_generation(prompt: str, response_type: str = "text") -> Tuple[str, st
             logger.error(f"Groq API connection failure: {e}")
 
     # Offline/Mock Fallback
-    logger.warning(
-        "No operational AI API keys found. Returning mock template response."
-    )
+    logger.warning("No operational AI API keys found. Returning mock template response.")
     if response_type == "json":
         return (
             json.dumps(
@@ -252,7 +242,8 @@ def run_ai_generation(prompt: str, response_type: str = "text") -> Tuple[str, st
             "offline_mock",
         )
     return (
-        "Operations standard procedure: please deploy on-field staff to inspect the reported gate quadrant immediately.",
+        "Operations standard procedure: please deploy on-field staff to "
+        "inspect the reported gate quadrant immediately.",
         "offline_mock",
     )
 
@@ -392,9 +383,7 @@ def dashboard() -> Any:
             .order_by(StadiumGate.name)
             .all()
         )
-        incidents = (
-            db.query(Incident).order_by(Incident.created_at.desc()).limit(50).all()
-        )
+        incidents = db.query(Incident).order_by(Incident.created_at.desc()).limit(50).all()
         chats = (
             db.query(ChatLog)
             .filter(ChatLog.user_id == user.id)
@@ -459,9 +448,7 @@ def api_chat() -> Any:
         response_text, provider = run_ai_generation(prompt)
 
         # Save AI reply
-        ai_log = ChatLog(
-            user_id=session["user_id"], sender="assistant", message=response_text
-        )
+        ai_log = ChatLog(user_id=session["user_id"], sender="assistant", message=response_text)
         db.add(ai_log)
         db.commit()
 
@@ -527,9 +514,7 @@ def report_incident() -> Any:
         }
 
     severity = res_data.get("severity", "Low")
-    dispatch_notes = res_data.get(
-        "dispatch_notes", "Standard inspection protocol active."
-    )
+    dispatch_notes = res_data.get("dispatch_notes", "Standard inspection protocol active.")
 
     db = SessionLocal()
     try:
@@ -586,9 +571,7 @@ def allocate_staff() -> Any:
             return jsonify({"error": "Target gate not found."}), 404
 
         # Deduct staff from source gate if it exists in DB to simulate conservation
-        source_gate = (
-            db.query(StadiumGate).filter(StadiumGate.name == from_gate).first()
-        )
+        source_gate = db.query(StadiumGate).filter(StadiumGate.name == from_gate).first()
         if source_gate:
             if source_gate.staff_count < quantity:
                 return (
@@ -657,7 +640,8 @@ def optimize_operations() -> Any:
         prompt = (
             f"You are the FIFA World Cup 2026 Stadium Operations Optimizer.\n"
             f"Here is the current gate congestion profile:\n{gate_status}\n\n"
-            f"Suggest optimized staff movements to reduce wait times at highly congested gates (e.g. transfer staff from low wait time gates to high wait time gates).\n"
+            "Suggest optimized staff movements to reduce wait times at highly congested gates "
+            "(e.g. transfer staff from low wait time gates to high wait time gates).\n"
             f"Return ONLY a raw JSON array of recommendation objects. Each object must contain:\n"
             f"- 'from_gate': Name of source gate to move staff FROM.\n"
             f"- 'to_gate_id': ID of target gate to move staff TO.\n"
@@ -786,20 +770,44 @@ def matchday_context() -> Any:
 
     # FIFA World Cup 2026 venue and fixture context
     venues: List[Dict[str, Any]] = [
-        {"id": 1, "name": "MetLife Stadium", "city": "East Rutherford, NJ", "capacity": 82500, "country": "USA"},
-        {"id": 2, "name": "SoFi Stadium", "city": "Inglewood, CA", "capacity": 70240, "country": "USA"},
-        {"id": 3, "name": "AT&T Stadium", "city": "Arlington, TX", "capacity": 80000, "country": "USA"},
-        {"id": 4, "name": "Estadio Azteca", "city": "Mexico City", "capacity": 87500, "country": "Mexico"},
+        {
+            "id": 1,
+            "name": "MetLife Stadium",
+            "city": "East Rutherford, NJ",
+            "capacity": 82500,
+            "country": "USA",
+        },
+        {
+            "id": 2,
+            "name": "SoFi Stadium",
+            "city": "Inglewood, CA",
+            "capacity": 70240,
+            "country": "USA",
+        },
+        {
+            "id": 3,
+            "name": "AT&T Stadium",
+            "city": "Arlington, TX",
+            "capacity": 80000,
+            "country": "USA",
+        },
+        {
+            "id": 4,
+            "name": "Estadio Azteca",
+            "city": "Mexico City",
+            "capacity": 87500,
+            "country": "Mexico",
+        },
         {"id": 5, "name": "BC Place", "city": "Vancouver", "capacity": 54500, "country": "Canada"},
     ]
 
     prompt = (
-        f"You are the FIFA World Cup 2026 Operations Intelligence System.\n"
-        f"Generate a concise matchday briefing for stadium operations teams covering:\n"
-        f"1. Crowd management tip for a full stadium (80,000+ fans).\n"
-        f"2. One key transport or gate recommendation for today's fixture.\n"
-        f"3. A fan morale message to display on stadium screens.\n"
-        f"Keep the total response under 80 words. Use a professional operations tone."
+        "You are the FIFA World Cup 2026 Operations Intelligence System.\n"
+        "Generate a concise matchday briefing for stadium operations teams covering:\n"
+        "1. Crowd management tip for a full stadium (80,000+ fans).\n"
+        "2. One key transport or gate recommendation for today's fixture.\n"
+        "3. A fan morale message to display on stadium screens.\n"
+        "Keep the total response under 80 words. Use a professional operations tone."
     )
 
     try:

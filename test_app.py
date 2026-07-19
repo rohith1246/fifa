@@ -193,9 +193,7 @@ class SmartStadiumTestCase(unittest.TestCase):
 
         # Retrieve incident from database
         self.db.expire_all()
-        incident = (
-            self.db.query(Incident).filter(Incident.title == "Security Issue").first()
-        )
+        incident = self.db.query(Incident).filter(Incident.title == "Security Issue").first()
         self.assertIsNotNone(incident)
         # Check that description is escaped (does not contain raw script tags)
         self.assertNotIn("<script>", incident.description)
@@ -260,14 +258,8 @@ class SmartStadiumTestCase(unittest.TestCase):
 
         # Expiry cache to force DB re-read
         self.db.expire_all()
-        target = (
-            self.db.query(StadiumGate).filter(StadiumGate.id == self.gate_a.id).first()
-        )
-        source = (
-            self.db.query(StadiumGate)
-            .filter(StadiumGate.name == self.gate_b.name)
-            .first()
-        )
+        target = self.db.query(StadiumGate).filter(StadiumGate.id == self.gate_a.id).first()
+        source = self.db.query(StadiumGate).filter(StadiumGate.name == self.gate_b.name).first()
 
         # Gate A started with 8 staff. Added 3 coordinators -> should be 11.
         self.assertEqual(target.staff_count, 11)
@@ -376,9 +368,7 @@ class SmartStadiumTestCase(unittest.TestCase):
 
         # Check that user chat log was stored
         self.db.expire_all()
-        chat_count = (
-            self.db.query(ChatLog).filter(ChatLog.user_id == self.test_user.id).count()
-        )
+        chat_count = self.db.query(ChatLog).filter(ChatLog.user_id == self.test_user.id).count()
         # 2 logs -> User query + AI response
         self.assertEqual(chat_count, 2)
 
@@ -396,13 +386,7 @@ class SmartStadiumTestCase(unittest.TestCase):
     def test_ai_fallback_on_gemini_failure(self, mock_groq_post):
         """Verify that if Gemini fails, the app falls back to Groq REST API successfully."""
         mock_response_json = {
-            "choices": [
-                {
-                    "message": {
-                        "content": "Tactical response: deploy first response crew."
-                    }
-                }
-            ]
+            "choices": [{"message": {"content": "Tactical response: deploy first response crew."}}]
         }
         mock_groq_post.return_value.status_code = 200
         mock_groq_post.return_value.json.return_value = mock_response_json
